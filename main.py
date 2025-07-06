@@ -4,17 +4,21 @@ from prometheus_flask_exporter import PrometheusMetrics
 from sqlalchemy import create_engine, text
 
 
-app = Flask(__name__)
+app = Flask('issue-updater')
 metrics = PrometheusMetrics(app)
 
 db_url = f'sqlite:///{os.path.dirname(__file__)}/updater.db'
 engine = create_engine(db_url, connect_args={'check_same_thread': False}, echo=True)
 
 
-
 @app.route('/')
-def main():
+def root():
     return 'Hello!'
+
+
+@app.route('/favicon.ico')
+def favicon():
+    return '404'
 
 
 @app.route("/health")
@@ -22,6 +26,15 @@ def health():
     resp = jsonify({"status": "healthy"})
     resp.status_code = 200
     return resp
+
+
+@app.route('/api/issue', methods=["POST"])
+def add_issue() -> list:
+    result = []
+    if request:
+        result = request.json
+        print('save to database', result)
+    return result
 
 
 def select_all(_engine, table: str):
@@ -32,5 +45,4 @@ def select_all(_engine, table: str):
 
 
 if __name__ == '__main__':
-    select_all(engine, 'issues')
     app.run(debug=True)
